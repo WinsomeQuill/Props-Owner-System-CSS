@@ -1,18 +1,21 @@
-
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
 #include <zombiereloaded>
 #include <multicolors>
+#pragma tabsize 0
 
-#define PL_VERSION "1.5"
+#define PL_VERSION "1.6.1"
 #define MAXENTITIES 2048
+#define PREFIX "[ZP]"
+#define INFO "[iNFO]"
+#define WARNING "[WARNING]"
 
 public Plugin:myinfo =
 {
-	name = "[All] Prop Health(ZR mode)",
-	author = "Roy (Christian Deacon | Author) & Doshik (Added Owner system)",
-	description = "Props now have health + owner system!",
+	name = "Prop Health(ZR mode)",
+	author = "Roy (Christian Deacon) & (Owner system) Doshik",
+	description = "Props now have health + owner system! (Thanks: Killik, Ire, Grey83, tonline_kms65_1)",
 	version = PL_VERSION,
 	url = "GFLClan.com && https://steamcommunity.com/id/doshikplayer"
 };
@@ -46,10 +49,19 @@ new String:g_sPrintMessage[256];
 new bool:g_bDebug;
 char zombie[] = "Zombie";
 char human[] = "Human";
+char spec[] = "Spectator";
+new String:admsteam[32];	
+new String:plysteam[32];
+
 
 // Other Variables
 new g_arrProp[MAXENTITIES + 1][Props];
 new String:g_sLogFile[PLATFORM_MAX_PATH];
+new String:g_sLogDel[PLATFORM_MAX_PATH];
+
+new Handle:g_hTimer = INVALID_HANDLE;
+new const String:g_Str[] = "Authors of the plugin Roy and Doshik.                                   Special Thanks: Killik, Ire, Grey83, tonline_kms65_1                                   ";
+new g_CurrentIndex, g_MaxIndex;
 
 public OnPluginStart()
 {
@@ -87,6 +99,8 @@ public OnPluginStart()
 	
 	// Commands
 	RegConsoleCmd("sm_getpropinfo", Command_GetPropInfo);
+	RegConsoleCmd("sm_zabout", Command_ZAbout);
+	RegAdminCmd("sm_deleteprop", Command_DeleteProp, ADMFLAG_SLAY, "Allows an administrator to delete any props.");
 }
 
 public CVarChanged(Handle:hCVar, const String:sOldV[], const String:sNewV[])
@@ -106,13 +120,14 @@ public OnConfigsExecuted()
 	GetConVarString(g_hPrintMessage, g_sPrintMessage, sizeof(g_sPrintMessage));
 	g_bDebug = GetConVarBool(g_hDebug);
 	
-	BuildPath(Path_SM, g_sLogFile, sizeof(g_sLogFile), "logs/prophealth-debug.log");
+	BuildPath(Path_SM, g_sLogFile, sizeof(g_sLogFile), "logs/zprops/prophealth-debug.log");
+	BuildPath(Path_SM, g_sLogDel, sizeof(g_sLogFile), "logs/zprops/zprops-del.log");
 }
 
 public OnMapStart()
 {
-	PrecacheSound("physics/metal/metal_box_break1.wav");
-	PrecacheSound("physics/metal/metal_box_break2.wav");
+	//PrecacheSound("physics/metal/metal_box_break1.wav");
+	//PrecacheSound("physics/metal/metal_box_break2.wav");
 }
 
 public OnEntityCreated(iEnt, const String:sClassname[])
@@ -124,6 +139,9 @@ public OnEntitySpawned(iEnt, client)
 {
 	if (iEnt > MaxClients && IsValidEntity(iEnt))
 	{
+		decl String:sClassname[MAX_NAME_LENGTH];
+		GetEntityClassname(iEnt, sClassname, sizeof(sClassname));
+		if (!StrEqual(sClassname, "prop_physics", false) && !StrEqual(sClassname, "prop_dinamyc", false) && !StrEqual(sClassname, "prop_physics_override", false) && !StrEqual(sClassname, "prop_physics_multiplayer", false)) return;
 		new owner = GetEntPropEnt(iEnt, Prop_Send, "m_PredictableID"); //получает создателя Entity
 		g_arrProp[iEnt][iHealth] = -1;
 		g_arrProp[iEnt][fMultiplier] = 0.0;
@@ -145,6 +163,7 @@ public OnEntitySpawned(iEnt, client)
 public Action:Hook_OnTakeDamage(iEnt, &iAttacker, &iInflictor, &Float:fDamage, &iDamageType)
 {
 	new owner = GetEntPropEnt(iEnt, Prop_Send, "m_PredictableID"); //получает создателя Entity
+	
 	if(owner <= 0)
 	{
 		if (g_bDebug)
@@ -205,48 +224,84 @@ public Action:Hook_OnTakeDamage(iEnt, &iAttacker, &iInflictor, &Float:fDamage, &
 		}
 		else
 		{
-			if(iAttacker != owner)
+			if(owner != 400) //Если владелец пропа жив
 			{
-				if(GetClientTeam(iAttacker) == 2 && GetClientTeam(owner) == 2 || GetClientTeam(iAttacker) == 3 && GetClientTeam(owner) == 3) //Если КТ ломает проп КТ или Т проп Т
+				if(iAttacker != owner)
 				{
-					PrintCenterText(iAttacker, "Health: [%i] Owner: [%N]", g_arrProp[iEnt][iHealth], owner);
-					if (g_bDebug)
+					if(GetClientTeam(iAttacker) == 2 && GetClientTeam(owner) == 2) //Если Т ломает проп Т
 					{
-						LogToFile(g_sLogFile, "Prop %i returned. Attacker (%i) not OWNER(%i).", iEnt, iAttacker, owner);
+						PrintCenterText(iAttacker, "Health: [%i] Owner: [%N] (Zombie)", g_arrProp[iEnt][iHealth], owner);
+						if (g_bDebug)
+						{
+							LogToFile(g_sLogFile, "Prop %i returned. Attacker (%i) not OWNER(%i).", iEnt, iAttacker, owner);
+						}
+						return Plugin_Continue;
 					}
-					return Plugin_Continue;
-				}
-			}
-			else
-			{
-				if(iAttacker == owner) //Если владелец ломает свой проп
-				{
-					if (g_bDebug)
+					else
 					{
-						LogToFile(g_sLogFile, "Prop %i damaged! Attacker owner(%i) || OWNER [%i]", iEnt, iAttacker, owner);
+						if(GetClientTeam(iAttacker) == 3 && GetClientTeam(owner) == 3) //Если КТ ломает проп КТ
+						{
+							PrintCenterText(iAttacker, "Health: [%i] Owner: [%N] (Human)", g_arrProp[iEnt][iHealth], owner);
+							if (g_bDebug)
+							{
+								LogToFile(g_sLogFile, "Prop %i returned. Attacker (%i) not OWNER(%i).", iEnt, iAttacker, owner);
+							}
+							return Plugin_Continue;
+						}
 					}
 				}
 				else
 				{
-					//3 = CT
-					//2 = T
-					//1 = SPEC
-					if(GetClientTeam(owner) == 2 && GetClientTeam(iAttacker) == 3) //Если Человек ломат проп Зомби
+					if(iAttacker == owner) //Если владелец ломает свой проп
 					{
 						if (g_bDebug)
 						{
-							LogToFile(g_sLogFile, "Prop %i damaged! Attacker Human(%i) and Prop Human || OWNER [%i]", iEnt, iAttacker, owner);
+							LogToFile(g_sLogFile, "Prop %i damaged! Attacker owner(%i) || OWNER [%i]", iEnt, iAttacker, owner);
 						}
 					}
 					else
 					{
-						if(GetClientTeam(owner) == 3 && GetClientTeam(iAttacker) == 2) //Если Зомби ломает проп Человека
+						//3 = CT
+						//2 = T
+						//1 = SPEC
+						if(GetClientTeam(owner) == 2 && GetClientTeam(iAttacker) == 3) //Если Человек ломат проп Зомби
 						{
 							if (g_bDebug)
 							{
-								LogToFile(g_sLogFile, "Prop %i damaged! Attacker Zombie(%i) and Prop Zombie || OWNER [%i]", iEnt, iAttacker, owner);
+								LogToFile(g_sLogFile, "Prop %i damaged! Attacker Human(%i) and Prop Human || OWNER [%i]", iEnt, iAttacker, owner);
 							}
 						}
+						else
+						{
+							if(GetClientTeam(owner) == 3 && GetClientTeam(iAttacker) == 2) //Если Зомби ломает проп Человека
+							{
+								if (g_bDebug)
+								{
+									LogToFile(g_sLogFile, "Prop %i damaged! Attacker Zombie(%i) and Prop Zombie || OWNER [%i]", iEnt, iAttacker, owner);
+								}
+							}
+							else
+							{
+								if(GetClientTeam(owner) == 1 && GetClientTeam(iAttacker) == 2 || GetClientTeam(owner) == 1 && GetClientTeam(iAttacker) == 3) //Если владелец пропов ушел в спектора
+								{
+									if (g_bDebug)
+									{
+										LogToFile(g_sLogFile, "Prop %i damaged! Attacker (%i) and Prop Spectate || OWNER [%i]", iEnt, iAttacker, owner);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			else //Все игроки могут ломать пропы мертвого владельца
+			{
+				if(GetClientTeam(iAttacker) == 2 || GetClientTeam(iAttacker) == 3)
+				{
+					PrintCenterText(iAttacker, "Health: [%i] Owner: [%N] (DEATH)", g_arrProp[iEnt][iHealth], owner);
+					if (g_bDebug)
+					{
+						LogToFile(g_sLogFile, "Prop %i damaged! Attacker (%i) and Prop Owner DEATH || OWNER [%i] (DEATH)", iEnt, iAttacker, owner);
 					}
 				}
 			}
@@ -268,6 +323,7 @@ public Action:Hook_OnTakeDamage(iEnt, &iAttacker, &iInflictor, &Float:fDamage, &
 		}
 	}
 	
+	
 	if (g_arrProp[iEnt][iHealth] < 1)
 	{
 		// Destroy the prop.
@@ -275,6 +331,8 @@ public Action:Hook_OnTakeDamage(iEnt, &iAttacker, &iInflictor, &Float:fDamage, &
 		{
 			LogToFile(g_sLogFile, "Prop Destroyed (Prop: %i) (Attacker: %i)", iEnt, iAttacker);
 		}
+		if(owner == iAttacker) PrintToChat(iAttacker, "\x07FFFFFF%s You destroyed \x07FFFF38Your\x07FFFFFF object!", PREFIX);
+		else if(owner >= 1) PrintToChat(iAttacker, "\x07FFFFFF%s You destroyed prop player \x07FFFF38%N\x07FFFFFF!", PREFIX, owner);
 		
 		decl String:buffer[32];
 		Format(buffer, sizeof(buffer), "dissolve%f", GetRandomFloat());
@@ -325,15 +383,22 @@ public Action:Hook_OnTakeDamage(iEnt, &iAttacker, &iInflictor, &Float:fDamage, &
 				}
 				else
 				{
-					if(!ZR_IsClientHuman(owner)) //Проп зомби
+					if(GetClientTeam(owner) == 2) //Проп зомби
 					{
 						PrintCenterText(iAttacker, g_sPrintMessage, g_arrProp[iEnt][iHealth], owner, zombie);
 					}
 					else
 					{
-						if(!ZR_IsClientZombie(owner)) //Проп человека
+						if(GetClientTeam(owner) == 3) //Проп человека
 						{
 							PrintCenterText(iAttacker, g_sPrintMessage, g_arrProp[iEnt][iHealth], owner, human);
+						}
+						else
+						{
+							if(GetClientTeam(owner) == 1) //Если владелец пропа ушел в спектаторы
+							{
+								PrintCenterText(iAttacker, g_sPrintMessage, g_arrProp[iEnt][iHealth], owner, spec);
+							}
 						}
 					}
 				}
@@ -360,24 +425,140 @@ public Action:Command_GetPropInfo(iClient, iArgs)
 		decl String:sModelName[PLATFORM_MAX_PATH];
 		GetEntPropString(iEnt, Prop_Data, "m_ModelName", sModelName, sizeof(sModelName));
 		
-		decl String:sClassname[MAX_NAME_LENGTH];
-		new sPropdebug = GetEntityClassname(iEnt, sClassname, sizeof(sClassname));
 		if(owner <= 0)
 		{
-			PrintToChat(iClient, "\x03[PH]\x02(Model: %s) (Prop Health: %i) (Prop Index: %i) (Prop Class: %s) (Owner: SERVER) (You: %i)", sModelName, g_arrProp[iEnt][iHealth], iEnt, sPropdebug, iClient);
+			PrintToChat(iClient, "\x07FFFFFF%s (Model: %s) (Prop Health: \x0738ff3f%i\x07FFFFFF) (Prop Index: %i) (OwnerID: SERVER) (Your ID: \x07F74545%i\x07FFFFFF)", PREFIX, sModelName, g_arrProp[iEnt][iHealth], iEnt, iClient);
 		}
 		else
 		{
-			PrintToChat(iClient, "\x03[PH]\x02(Model: %s) (Prop Health: %i) (Prop Index: %i) (Prop Class: %s) (Owner: %i) (You: %i)", sModelName, g_arrProp[iEnt][iHealth], iEnt, sPropdebug, owner, iClient);
+			PrintToChat(iClient, "\x07FFFFFF%s (Model: %s) (Prop Health: \x0738ff3f%i\x07FFFFFF) (Prop Index: %i) (OwnerID: \x07F74545%i\x07FFFFFF) (Owner Name: \x07F74545%N\x07FFFFFF) (Your ID: \x07F74545%i\x07FFFFFF)", PREFIX, sModelName, g_arrProp[iEnt][iHealth], iEnt, owner, owner, iClient);
 		}
 	}
 	else
 	{
-		PrintToChat(iClient, "\x03[PH]\x02Prop is either a player or invalid. (Prop Index: %i)", iEnt);
+		PrintToChat(iClient, "\x07FFFFFF%s \x07F74545Prop is either a player or invalid. (Prop Index: %i)", PREFIX, iEnt);
 	}
 	return Plugin_Handled;
 }
 
+removeprop(iEnt)
+{
+	decl String:buffer[32];
+	Format(buffer, sizeof(buffer), "dissolve%f", GetRandomFloat());
+	DispatchKeyValue(iEnt, "targetname", buffer);
+	iEnt = CreateEntityByName("env_entity_dissolver");
+	DispatchKeyValue(iEnt, "dissolvetype", "3");
+	DispatchKeyValue(iEnt, "target", buffer);
+	AcceptEntityInput(iEnt, "dissolve");
+	AcceptEntityInput(iEnt, "Kill");
+}
+
+public Action:Command_DeleteProp(iClient, iArgs)
+{
+	new iEnt = GetClientAimTarget(iClient, false);
+	new owner = GetEntPropEnt(iEnt, Prop_Send, "m_PredictableID"); //получает создателя Entity
+	
+	decl String:sModelName[PLATFORM_MAX_PATH];
+	GetEntPropString(iEnt, Prop_Data, "m_ModelName", sModelName, sizeof(sModelName)); //model
+	
+	GetClientAuthId(iClient, AuthIdType:1, admsteam, 64, true); //Admin SteamID
+	
+	
+	decl String:sClassname[MAX_NAME_LENGTH];
+	GetEntityClassname(iEnt, sClassname, sizeof(sClassname));
+	
+	if (!StrEqual(sClassname, "prop_physics", false) && !StrEqual(sClassname, "prop_dinamyc", false) && !StrEqual(sClassname, "prop_physics_override", false) && !StrEqual(sClassname, "prop_physics_multiplayer", false))
+	{
+		PrintToChat(iClient, "\x07FFFF00%s\x07F74545 This Prop cannot be deleted! (Model: %s)", INFO, sModelName);
+		return Plugin_Continue;
+	}
+	
+	if(iEnt > MaxClients && IsValidEntity(iEnt)) //Если проп не является игроком
+	{
+		if(owner <= 0) //Если проп сервера
+		{
+			PrintToChat(iClient, "\x07FFFFFF%s You deleted prop! (Model: %s) (OwnerID: SERVER) (Your ID: \x07F74545%i\x07FFFFFF)", PREFIX, sModelName, iClient);
+			LogToFile(g_sLogDel, "%s Admin (%N) (SteamID: %s) delete prop (Owner: SERVER) (Model: %s)", PREFIX, iClient, admsteam, sModelName);
+			CPrintToChatAll("\x07FFFF00%s\x07FFFFFF Admin \x07F74545%N\x07FFFFFF deleted \x07F74545SERVER\x07FFFFFF prop!", INFO, iClient, owner);
+			removeprop(iEnt);
+		}
+		else
+		{	
+			if(owner >= 1) //Если проп игрока
+			{
+				GetClientAuthId(owner, AuthIdType:1, plysteam, 64, true); //Admin SteamID
+				PrintToChat(iClient, "\x07FFFFFF%s You deleted prop! (Model: %s) (OwnerID: \x07F74545%i\x07FFFFFF) (Owner Name: \x07F74545%N\x07FFFFFF) (Your ID: \x07F74545%i\x07FFFFFF)", PREFIX, sModelName, owner, owner, iClient);
+				LogToFile(g_sLogDel, "%s Admin (%N) (SteamID: %s) delete prop (Owner: %N) (SteamID: %s) (Model: %s)", PREFIX, iClient, admsteam, owner, plysteam, sModelName);
+				CPrintToChatAll("\x07FFFF00%s \x07FFFFFFAdmin \x07F74545%N\x07FFFFFF deleted player prop \x07F74545%N\x07FFFFFF!", INFO, iClient, owner);
+				removeprop(iEnt);
+			}
+			else
+			{
+				if(owner == iClient) //Если админ удаляет свой проп
+				{
+					LogToFile(g_sLogDel, "%s Admin (%N) (SteamID: %s) delete prop (Owner: %N) (SteamID: %s) (Model: %s)", PREFIX, iClient, admsteam, owner, plysteam, sModelName);
+					PrintToChat(iClient, "\x07FFFFFF%s You deleted prop! (Model: %s) (OwnerID: \x07F74545%i\x07FFFFFF) (Owner Name: \x07F74545%N\x07FFFFFF) (Your ID: \x07F74545%i\x07FFFFFF)", PREFIX, sModelName, owner, owner, iClient);
+					removeprop(iEnt);
+				}
+				else
+				{
+					LogToFile(g_sLogDel, "ERROR FUNCTION DELETE PROP!"); //Репорт ошибки
+				}
+			}
+		}
+	}
+	else
+	{
+		PrintToChat(iClient, "\x07FFFFFF%s \x07F74545Prop is either a player or invalid. (Prop Index: %i)", PREFIX, iEnt);
+	}
+	return Plugin_Handled;
+}
+
+////////////////ABOUT/////////////////
+public Action:Command_ZAbout(iClient, iArgs)
+{
+    /*if (g_hTimer != INVALID_HANDLE)
+    {
+        KillTimer(g_hTimer);
+        g_hTimer = INVALID_HANDLE;
+    }
+    else*/ if ((g_MaxIndex = (strlen(g_Str) - 1)) > 0)
+    {
+        g_CurrentIndex = -1;
+        msg(iClient);
+        g_hTimer = CreateTimer(0.1, g_hTimer_CallBack, iClient, TIMER_REPEAT);
+    }
+    //return Plugin_Handled;
+}
+
+public Action:g_hTimer_CallBack(Handle:timer, any:iClient)
+{
+    if (IsClientInGame(iClient))
+    {
+        msg(iClient);
+        return Plugin_Continue;
+		//return Plugin_Stop;
+    }
+    //g_hTimer = INVALID_HANDLE;
+    return Plugin_Stop;
+}
+
+msg(iClient)
+{
+    static String:s[256];
+    strcopy(s, sizeof(s), g_Str);
+    
+    if (++g_CurrentIndex < g_MaxIndex) {
+        s[g_CurrentIndex + 1] = 0;
+    }
+    else {
+        g_CurrentIndex = -1;
+		KillTimer(g_hTimer);
+    }
+    
+    PrintCenterText(iClient, s);
+}
+//////////////////////////////////////
 stock SetPropHealth(iEnt)
 {
 	decl String:sClassname[MAX_NAME_LENGTH];
