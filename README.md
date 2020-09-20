@@ -14,6 +14,15 @@ Requirements
 
     SourceMod 1.9+
     MetaMod 1.9+
+    ZombieReloaded
+    MultiColors
+    SdkTools
+    SdkHooks
+
+Commands
+----
+    sm_getpropinfo - debug function, returns: Health, Owner, YourID, Model prop.
+    sm_deleteprop - Deleted target prop. (Flag: ADMFLAG_SLAY)
 
 Info
 ----
