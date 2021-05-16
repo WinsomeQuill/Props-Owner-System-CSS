@@ -16,7 +16,9 @@ Requirements
 
 Commands
 ----
-    sm_getpropinfo - debug function, returns: Health, Owner, YourID, Model prop.
+    sm_zprops (!zprops in chat) - Zprops menu.
+    sm_repair (!repair in chat) - Get repair tools for props.
+    sm_getpropinfo - Debug function, returns: Health, Owner, YourID, Model prop.
     sm_deleteprop - Deleted target prop. (Flag: ADMFLAG_SLAY)
     sm_sethpprop - Change target health prop. (Flag: ADMFLAG_RCON)
     sm_resetprop - Remove owner from target prop. (Flag: ADMFLAG_SLAY)
