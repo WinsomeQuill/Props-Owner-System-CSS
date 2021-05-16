@@ -7,8 +7,8 @@ If the prop owner is dead, then the prop goes to the server and any player can b
 Requirements
 ----
 
-    SourceMod 1.9+
-    MetaMod 1.9+
+    SourceMod 1.10+
+    MetaMod 1.10+
     ZombieReloaded
     MultiColors
     SdkTools
@@ -18,7 +18,11 @@ Commands
 ----
     sm_getpropinfo - debug function, returns: Health, Owner, YourID, Model prop.
     sm_deleteprop - Deleted target prop. (Flag: ADMFLAG_SLAY)
+    sm_sethpprop - Change target health prop. (Flag: ADMFLAG_RCON)
+    sm_resetprop - Remove owner from target prop. (Flag: ADMFLAG_SLAY)
+    sm_getprops - Get list owners props. (Flag: ADMFLAG_SLAY)
+    sm_zprop_credits - Gives player credits for zprops. (Flag: ADMFLAG_CONVARS)
 
 Info
 ----
-I did not create these plugins from scratch, I just modified them, all authors are saved!
+I created special version for NIDE.GG
