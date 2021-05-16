@@ -1,0 +1,176 @@
+"Phrases"
+{
+	// ===========================
+	// Chat Messages ZPROPS
+	// ===========================
+	"Prefix_Chat"
+	{
+		"en"		"{white}[ZProps]: {olive}"
+	}
+	"Phrase_Insufficient_Credits"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"You have insufficient credits - Current: {1}, Required: {2}!"
+    "ru"    "У вам недостаточно кредитов - У вас: {1}, Нужно: {2}!"
+	}
+	"Phrase_Spawn_Prop"
+	{
+		"#format"	"{1:s},{2:s}"
+		"en"		"{Yellow}You have created a {white}{1}{olive}! {lightgreen}Owner - {2}"
+    "ru"    "{Yellow}Вы создали проп {white}{1}{olive}! {lightgreen}Владелец - {2}"
+	}
+	"Phrase_Join"
+	{
+		"en"		"You'll earn credits for killing zombies, etc. Type !zprops to spawn a prop. (Updated by Doshik)"
+    "ru"    "Вы будете получать кредиты за убийства зомби. Используйте !zprops для спавна пропа. (Updated by Doshik)"
+	}
+
+	// ===========================
+	// Hint Messages ZPROPS
+	// ===========================
+	"Prefix_Hint"
+	{
+		"#format"	""
+		"en"		"[ZProps] \n\n"
+	}
+	"Hint_Credits_Buy"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"Credits Spent: {1} - Current Credits: {2}"
+    "ru"    "Потрачено кредитов: {1} - Осталось кредитов: {2}"
+	}
+	"Hint_Credits_Gain"
+	{
+		"#format"	"{1:d},{2:d}"
+		"en"		"Credits Gained: {1} - Current Credits: {2}"
+    "ru"    "Получено кредитов: {1} - Всего кредитов: {2}"
+	}
+	"Hint_Credits_Maximum"
+	{
+		"#format"	"{1:d}"
+		"en"		"Current Credits: {1} - Maximum Credit Allowance Reached!"
+    "ru"    "Всего кредитов: {1} - Максимальная сумма достигнута!"
+	}
+
+	// ===========================
+	// Menus ZPROPS
+	// ===========================
+	"Menu_Title"
+	{
+		"#format"	"{1:d}"
+		"en"		"Available Props:\n- You have {1} credits"
+    "ru"    "Доступные пропы:\n- У вас {1} кредитов"
+	}
+	"Menu_Prop"
+	{
+		"#format"	"{1:s},{2:d}"
+		"en"		"{1}, ${2}"
+	}
+
+  // ===========================
+  // Props Health
+  // ===========================
+  "YouSpawnProp"
+  {
+    #format "{1:s}"
+    "en"  "{white}[ZProps] {yellow}You have created a prop. The Owner - {lightgreen}{1}{yellow}!"
+    "ru"  "{white}[ZProps] {yellow}Вы создали проп. Владелец - {lightgreen}{1}{yellow}!"
+  }
+
+  "RepairToolsIsDisabled"
+  {
+  	"en"	"{white}[ZProps] {yellow}Repair Tool is disabled!"
+    "ru"	"{white}[ZProps] {yellow}Repair Tool временно выключен!"
+  }
+
+  "RepairToolsOnlyForHumans"
+  {
+  	"en"	"{white}[ZProps] {yellow}The Repair Tool only for Humans!"
+    "ru"	"{white}[ZProps] {yellow}Инструмент только для человека!"
+  }
+
+  "RepairToolsIsAlreadyThere"
+  {
+  	"en"	"{white}[ZProps] {yellow}The Repair Tool is already there!"
+    "ru"	"{white}[ZProps] {yellow}У вас уже есть иструмент!"
+  }
+
+  "NeedMoreMoneyForRepair"
+  {
+    "en"	"{white}[ZProps] {red}You do not have enough money! We need 5000$!"
+    "ru"	"{white}[ZProps] {red}У тебя недостаточно денег! Нужно 5000$!"
+  }
+
+  "YouBuyRepairTools"
+  {
+  	"en"	"{white}[ZProps] You bought Repair Tool to fix Your props! Use knife for fix prop!"
+  	"ru"	"{white}[ZProps] Вы купили инструмент для починки Своих пропов! Используйте нож, чтобы починить проп!"
+  }
+
+  "PropInvalid"
+  {
+  	"en"	"{white}[ZProps] {red}Prop is either a player or invalid."
+  	"ru"	"{white}[ZProps] {red}Энтити не явлется пропом!"
+  }
+
+  "ZombieBreakProp"
+  {
+  	#format	"{1:i},{2:s}"
+  	"en"	"Health: [{1}] Owner: [{2}] (Zombie)"
+  	"ru"	"Здоровье: [{1}] Владелец: [{2}] (Зомби)"
+  }
+
+  "HumanBreakProp"
+  {
+  	#format	"{1:i},{2:s}"
+  	"en"	"Health: [{1}] Owner: [{2}] (Human)"
+  	"ru"	"Здоровье: [{1}] Владелец: [{2}] (Человек)"
+  }
+
+  "YouDestroyedYourProp"
+  {
+  	"en"	"{white}[ZProps] You destroyed {yellow}Your {white}prop!"
+  	"ru"	"{white}[ZProps] Вы уничтожили {yellow}Свой {white}проп!"
+  }
+
+  "YouDestroedPlayerProp"
+  {
+  	#format	"{1:s}"
+  	"en"	"{white}[ZProps] You destroyed prop player {yellow}{1}{white}!"
+  	"ru"	"{white}[ZProps] Вы уничтожили проп игрока {yellow}{1}{white}!"
+  }
+
+  "YouLostRepairTools"
+  {
+  	"en"	"{white}[ZProps] You are dead and lost your Repair Tool!"
+  	"ru"	"{white}[ZProps] Вы погибли и потеряли инструмент!"
+  }
+
+  "OwnerPropServer"
+  {
+  	#format	"{1:i}"
+  	"en"	"Health: [{1}] Owner: [Server]"
+  	"ru"	"Здоровье: [{1}] Владелец: [Сервер]"
+  }
+
+  "OwnerPropZombie"
+  {
+  	#format	"{1:i},{2:s}"
+  	"en"	"Health: [{1}] Owner: [{2}] (Zombie)"
+  	"ru"	"Здоровье: [{1}] Владелец: [{2}] (Зомби)"
+  }
+
+  "OwnerPropHuman"
+  {
+  	#format	"{1:i},{2:s}"
+  	"en"	"Health: [{1}] Owner: [{2}] (Human)"
+  	"ru"	"Здоровье: [{1}] Владелец: [{2}] (Человек)"
+  }
+
+  "OwnerPropSpectate"
+  {
+  	#format	"{1:i},{2:s}"
+  	"en"	"Health: [{1}] Owner: [{2}] (Spectate)"
+  	"ru"	"Здоровье: [{1}] Владелец: [{2}] (Наблюдатель)"
+  }
+}
